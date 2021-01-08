@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block scripts %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        $("#basicDate").flatpickr({
+            enableTime: true,
+            inline: true
+        });
+    </script>
+{% endblock %}
+
+{% block content %}
+  <div class="container">
+    <h1>Hello, Bootstrap</h1>
+    <div class="row">
+      <div class='col-sm-6'>
+        <p> {{ form.startdate() }} Pick a date here </p>  
+        {{ form.submit() }}
+
+
+        
+
+    </div>
+    </div>
+  </div>
+
+
+
+  <div class="container">
+    <input type="datetime" id="basicDate" placeholder="Click to Select Date and Time..." data-input>
+  </div>
+{% endblock %}

@@ -54,7 +54,10 @@ def register():
 
 @app.route('/date', methods=['GET','POST'])
 def date():
-    form = DateForm()
-    if form.validate_on_submit():
-        startdate = form.startdate.data
-    return render_template('date.html', title='Date', form=form)
+    return render_template('date.html', title='Date')
+
+@app.route('/addDate', methods=['GET','POST'])
+def addDate():
+    if request.method == "POST":
+        startdate = request.form.get("basicDate")
+    return startdate

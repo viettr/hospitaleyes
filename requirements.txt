@@ -20,3 +20,4 @@ WTForms
 # requirements for Heroku
 psycopg2
 gunicorn
+email-validator

@@ -5,6 +5,8 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.6.3/css/bootstrap-select.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         $("#basicDate").flatpickr({
@@ -22,6 +24,12 @@
     ]
         });
     </script>
+    <script>
+      $("#city_select").change(function(){
+        var selected = $('#city_select option:selected').val();
+        alert(selected);           
+      });
+    </script>
 {% endblock %}
 
 {% block content %}
@@ -32,7 +40,16 @@
       <input type="datetime" id="basicDate" name="basicDate" placeholder="Click to Select Date and Time..." data-input>
       <input type="submit" value="Submit">
     </form>
+
+    <div class='row-fluid'>
+      <label for='city'>City:</label>
+      <select name="city_select" class="selectpicker" data-show-subtext="true" data-live-search="true" id='city_select'>
+        <option value='doc1' data-subtext={{doc1}}>Doc1</option>
+        <option value='doc2' data-subtext={{doc2}}>Doc2</option>
+      </select>
+    </div>
   </div>
+
 
 
 {% endblock %}

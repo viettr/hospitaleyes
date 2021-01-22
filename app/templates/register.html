@@ -1,12 +1,15 @@
-
 {% extends "base.html" %}
-{% import 'bootstrap/wtf.html' as wtf %}
 
 {% block app_content %}
-    <h1>Register</h1>
     <div class="row">
-        <div class="col-md-4">
-            {{ wtf.quick_form(form) }}
+        <div class="col text-center">
+            <h1>Register</h1>
+            <p style="margin-top:2.5em"></p>
+            <p>
+                <a href="{{ url_for('register_patient') }}"><button type="button" class="btn btn-primary btn-lg">Register as Patient</button></a>
+                <a href="{{ url_for('register_department') }}"><button type="button" class="btn btn-primary btn-lg">Register as Hospital</button></a>
+                <button type="button" class="btn btn-primary btn-lg">Register as Partner</button>
+            </p>
         </div>
     </div>
 {% endblock %}

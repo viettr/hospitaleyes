@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block scripts %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.6.3/css/bootstrap-select.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        $("#apdate").flatpickr({
+            enableTime: false,
+            inline: true
+        });
+        $(function() {
+            var doc = $('#doctor');
+            var sel_date = $('#apdate');
+            var sel_time = $('#aptime');
+
+            doc.on('change', function() {
+                getTimeSlots();
+            });
+
+            sel_date.on('change', function() {
+                getTimeSlots();
+            });
+
+            function getTimeSlots() {
+                alert('test')
+                $.getJSON('/_update_timeslots', { doc: $('#doctor').val(), date: $('#apdate').val() }, function(response) {
+
+                    console.log(response);
+
+                    $('#aptime').empty();
+                    alert('hurray');
+                    for (var i = 0; i < response.length; i++) {
+                        $('#aptime').append(
+                            $('<option></option>')
+                            .text(response[i])
+                        );
+                    }
+                });
+            }         
+        });
+
+
+
+    </script>
+{% endblock %}
+
+{% block app_content %}
+<head>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.6.3/css/bootstrap-select.min.css" />
+</head>
+
+  <div class="container">
+    <form action="{{ url_for('book_internal_appointment_test') }}" method="post">
+        {{ form.hidden_tag() }}
+        <p>{{ wtf.form_field(form.phone)  }}</p>
+        <p>{{  wtf.form_field(form.doctor) }}</p>
+        <p>{{ wtf.form_field(form.apdate)  }}</p>
+        <p>{{ wtf.form_field(form.aptime)  }}</p>
+        <p>{{  wtf.form_field(form.submit)  }}</p>
+        {% if form.errors %}
+        {{ form.errors }}
+        {% endif %}
+    </form>
+  </div>
+{% endblock %}

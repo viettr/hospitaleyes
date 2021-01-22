@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block scripts %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.6.3/js/bootstrap-select.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        $("#basicDate").flatpickr({
+            enableTime: false,
+            inline: true,
+            disable: [
+        {
+            from: "2025-04-01",
+            to: "2025-05-01"
+        },
+        {
+            from: "2025-09-01",
+            to: "2025-12-01"
+        }
+    ]
+        });
+    </script>
+{% endblock %}
+
+
+{% block content %}
+<head>
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.6.3/css/bootstrap-select.min.css" />
+  </head>
+
+  <div class="container">
+    <form action="{{ url_for('book_appointment') }}" method="post">
+        {{ form.hidden_tag() }}
+        <div class="row-fluid">
+            <select name="doc_select" class="selectpicker" data-show-subtext="true" data-live-search="true">
+                {% for doc in doctors %}
+                    <option data-subtext={{doc.hospital}}>{{doc.name}}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="panel-body">
+            <input type="datetime" id="basicDate" name="basicDate" placeholder="Click to Select Date and Time..." data-input>
+        </div>
+        <div class="row-fluid">
+            <select name="time_select" class="selectpicker" data-show-subtext="true" data-live-search="true">
+                {% for Time in times %}
+                    <option>{{Time}}</option>
+                {% endfor %}
+            </select>
+        </div>
+            <input type="submit" name="submit" value="Search">
+            <input type="submit" name="submit" value="Submit">
+        {% if form.errors %}
+        {{ form.errors }}
+        {% endif %}
+    </form>
+  </div>
+
+
+{% endblock %}

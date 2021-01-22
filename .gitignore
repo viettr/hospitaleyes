@@ -134,3 +134,5 @@ dmypy.json
 logs/
 heroku*
 .vscode/settings.json
+app/templates/test.html
+add_patient.py

@@ -26,7 +26,7 @@
                         {% if current_user.role == 'patient' %}
                         <li><a href="{{ url_for('index') }}">Home</a></li>
                         <li><a>Appointment Scheduling</a></li>
-                        <li><a>My Appointments</a></li>
+                        <li><a href="{{ url_for('myappointments') }}">My Appointments</a></li>
                         {% elif current_user.role == 'hospital' %}
                         <li><a href="{{ url_for('index') }}">Home</a></li>
                         <li><a>Appointment Notification</a></li>

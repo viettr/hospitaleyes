@@ -122,24 +122,6 @@ def add_doctor():
 
 
 
-@app.route('/date', methods=['GET','POST'])
-def date():
-    return render_template('date.html', title='Date')
-
-@app.route('/addDate', methods=['GET','POST'])
-def addDate():
-    if request.method == "POST":
-        startdate = request.form.get("basicDate")
-    return startdate
-
-
-
-@app.route('/list')
-def appointment_list():
-
-    appointment_list = Appointment.query.filter_by(patient_id == current_user.id).all()
-    return render_template('list.html',list = appointment_list)
-
 @app.route('/Cancel',methods=['GET','POST'])
 def cancel_appointmetn():
 
@@ -157,33 +139,6 @@ def cancel_appointmetn():
 
 @app.route('/book_internal_appointment', methods=['GET', 'POST'])
 def book_internal_appointment():
-    if current_user.is_authenticated:
-        if current_user.role == "hospital":
-            form = BookInternalForm()
-            form.doctor.choices = [
-                (g.id, g.name) for g in Doctors.query.filter_by(department_id = current_user.department_id).order_by('name')]
-
-            if form.validate_on_submit():
-                if Patient.query.filter_by(phone=form.phone.data).first() is None:
-                    patient = Patient(phone=form.phone.data)
-                    db.session.add(patient)
-
-                patient = Patient.query.filter_by(phone=form.phone.data).first()
-                doc = Doctors.query.filter_by(id=form.doctor.data).first()
-                appoint = Appointment(apdate=form.apdate.data, aptime=form.aptime.data, patient_id=patient, doctor_id=doc)
-                db.session.add(appoint)
-                db.session.commit()
-                flash('The appointment has been made')
-                return redirect(url_for('/'))
-        else:
-            return redirect(url_for('index'))
-    else:
-        return redirect(url_for('index'))
-    return render_template('book_internal_appointment.html', title='Appointment', form=form)
-
-
-@app.route('/book_internal_appointment_test', methods=['GET', 'POST'])
-def book_internal_appointment_test():
     if current_user.is_authenticated:
         if current_user.role == "hospital":
             times = (pd.DataFrame(columns=['NULL'],
@@ -216,6 +171,7 @@ def book_internal_appointment_test():
     return render_template('book_internal_appointment_test.html', title='Appointment', form=form)
 
 
+
 @app.route('/_update_timeslots', methods=['GET', 'POST'])
 def update_timeslots():
     times = []
@@ -236,4 +192,15 @@ def update_timeslots():
     response = make_response(json.dumps(times))
     response.content_type = 'application/json'
     return response
+
+@app.route('/myappointments', methods=['GET', 'POST'])
+@login_required
+def myappointments():
+    appointments = db.session.query(Appointment).outerjoin(Doctors).outerjoin(Department).filter(Appointment.patient_id ==  current_user.patient_id).all()
+    table_header = ["#", "Date", "Time", "Doctor"]
+    appoint = []
+    for appoin in appointments:
+        appoint.append([appoin.id, appoin.apdate, appoin.aptime, appoin.doctor.name])
+
+    return render_template('myappointments.html', title='Appointment', table_header=table_header, appointments= appoint)
 

@@ -93,13 +93,6 @@ class CancelForm(FlaskForm):
 
 class BookInternalForm(FlaskForm):
     phone = StringField('Phone', validators=[DataRequired()])
-    apdate = DateTimeLocalField("date")
-    aptime = StringField('Time', validators=[DataRequired()])
-    doctor = SelectField(u'Doctor', coerce=int)
-    submit = SubmitField("Submit appointment")
-
-class BookInternalTestForm(FlaskForm):
-    phone = StringField('Phone', validators=[DataRequired()])
     apdate = DateField("date")
     aptime = SelectField('Time', validators=[DataRequired()])
     doctor = SelectField(u'Doctor', coerce=int)

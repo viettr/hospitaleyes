@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block scripts %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.6.3/css/bootstrap-select.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        $(function() {
+            var city = $('#city');
+            var sel_dep = $('#department');
+            var sel_hospital = $('#hospital');
+
+            city.on('click', function() {
+                getHospitalSlots();
+            });
+
+            sel_dep.on('click', function() {
+                getHospitalSlots();
+            });
+
+            function getHospitalSlots() {
+                $.getJSON('/_update_hospital', { city: $('#city').val(), department: $('#department').val() }, function(response) {
+
+                    console.log(response);
+                    $('#hospital').empty();
+                    for (var i = 0; i < response.length; i++) {
+                        $('#hospital').append(
+                            $('<option></option>')
+                            .attr("value", response[i][0])
+                            .text(response[i][1])
+                        );
+                    }
+                });
+            }         
+        });
+
+
+
+    </script>
+{% endblock %}
+
+{% block app_content %}
+  <div class="container">
+    <form action="{{ url_for('book_appointment_patient') }}" method="post">
+        {{ form.hidden_tag() }}
+        <p>{{ wtf.form_field(form.city)  }}</p>
+        <p>{{  wtf.form_field(form.department) }}</p>
+        <p>{{  wtf.form_field(form.hospital) }}</p>
+        <p>{{  wtf.form_field(form.submit)  }}</p>
+        {% if form.errors %}
+        {{ form.errors }}
+        {% endif %}
+    </form>
+  </div>
+{% endblock %}

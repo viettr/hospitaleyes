@@ -34,6 +34,7 @@ class Hospital(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.String(120))
     city = db.Column(db.String(120))
+    department = db.relationship('Department', backref='hospital', lazy='dynamic')
 
     def __repr__(self):
         return f"Hospital {self.name} from {self.city}"
@@ -43,26 +44,53 @@ class Department(db.Model):
     __tablename__ = 'Department'
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.Text)
-    hospital = db.Column(db.String(120))
     users = db.relationship('User', backref='department', lazy='dynamic')
     doctors = db.relationship('Doctors', backref='department', lazy='dynamic')
+    location = db.relationship('Location', backref='department', lazy='dynamic')
+    hospital_id = db.Column(db.Integer, db.ForeignKey('Hospital.id'))
 
+class Location(db.Model):
+    __tablename__ = 'Location'
+    id = db.Column(db.Integer, primary_key = True)
+    name = db.Column(db.String(120))
+    adress = db.Column(db.String(120))
+    room = db.Column(db.String(120))
+    colortape = db.Column(db.String(120))
+    link = db.Column(db.String(120))
+    department_id = db.Column(db.Integer, db.ForeignKey('Department.id'))
 
 class Doctors(db.Model):
     __tablename__ = 'Doctors'
     id = db.Column(db.Integer, primary_key = True)
     name = db.Column(db.Text)
     department_id = db.Column(db.Integer, db.ForeignKey('Department.id'))
+    docdate = db.relationship('DoctorDate',backref='doctor',lazy='dynamic')
     appointment = db.relationship('Appointment',backref='doctor',lazy='dynamic')
 
     def __repr__(self):
         return f"Doctor {self.name} from {self.department_id} department"
 
+class DoctorDate(db.Model):
+    __tablename__ = 'DoctorDate'
+    id = db.Column(db.Integer, primary_key = True)
+    date = db.Column(db.String(80))
+    doctor_id = db.Column(db.Integer, db.ForeignKey('Doctors.id'))
+    timeslots = db.relationship('TimeSlots',backref='date',lazy='dynamic')
+
+class TimeSlots(db.Model):
+    __tablename__ = 'TimeSlots'
+    id = db.Column(db.Integer, primary_key = True)
+    slot = db.Column(db.String(80))
+    doctor_date_id = db.Column(db.Integer, db.ForeignKey('DoctorDate.id'))
+
+
 class Patient(db.Model):
 
     __tablename__ = 'Patient'
 
-    id = db.Column(db.Integer, primary_key = True)    
+    id = db.Column(db.Integer, primary_key = True)
+    firstname = db.Column(db.String(120))        
+    lastname = db.Column(db.String(120))    
     phone = db.Column(db.String(120),index=True, unique=True)
     users = db.relationship('User', backref='patient', lazy='dynamic')
     appointment = db.relationship('Appointment',backref='patient',lazy='dynamic')
@@ -84,19 +112,3 @@ class Appointment(db.Model):
     
     def __repr__(self):
         return f"Appointment {self.apdate}"
-
-class SMStext(db.Model):
-    id = db.Column(db.Integer, primary_key = True)
-    confirmation_SMS = db.Column(db.Text)
-    status_SMS = db.Column(db.Text)
-    Cancel_SMS = db.Column(db.Text)
-    doctor_id = db.Column(db.Integer,db.ForeignKey('Doctors.id'))
-
-    def __init__(self,confirmation_SMS,Status_SMS,Cancel_SMS,doctor_id):
-        self.confirmation_SMS = confirmation_SMS
-        self.status_SMS = Status_SMS
-        self.Cancel_SMS = Cancel_SMS
-        self.doctor_id = doctor_id
-    
-    def __repr__(self):
-        return f"{self.confirmation_SMS},{self.Cancel_SMS},{self.doctor_id}"

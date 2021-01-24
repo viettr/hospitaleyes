@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, BooleanField, SubmitField, SelectField, IntegerField, DateField
 from wtforms.validators import ValidationError, DataRequired, Email, EqualTo
-from app.models import User, Doctors, Patient, Appointment, SMStext, Hospital, Department
+from app.models import User, Doctors, Patient, Appointment, Hospital, Department
 from wtforms.fields.html5 import DateTimeLocalField
 import phonenumbers
 
@@ -16,6 +16,8 @@ class LoginForm(FlaskForm):
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
+    firstname = StringField('Firstname', validators=[DataRequired()])
+    lastname = StringField('Lastname', validators=[DataRequired()])
     phone = StringField('Phone', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
@@ -33,9 +35,6 @@ class RegistrationForm(FlaskForm):
             raise ValidationError('Please use a different email address.')
     
     def validate_phone(self, phone):
-        user = Patient.query.filter_by(phone=phone.data).first()
-        if user is not None:
-            raise ValidationError('Please use a different phone.')
 
         try:
             p = phonenumbers.parse(phone.data)
@@ -52,7 +51,7 @@ class RegistrationDepartmentForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     password2 = PasswordField(
         'Repeat Password', validators=[DataRequired(), EqualTo('password')])
-    hospital = SelectField(u'Hospital')
+    hospital = SelectField(u'Hospital', coerce=int)
 
     name = StringField('Department name', validators=[DataRequired()])
     submit = SubmitField('Register')
@@ -93,7 +92,39 @@ class CancelForm(FlaskForm):
 
 class BookInternalForm(FlaskForm):
     phone = StringField('Phone', validators=[DataRequired()])
+    firstname = StringField('Firstname', validators=[DataRequired()])
+    lastname = StringField('Lastname', validators=[DataRequired()])
     apdate = DateField("date")
     aptime = SelectField('Time', validators=[DataRequired()])
     doctor = SelectField(u'Doctor', coerce=int)
+    location = SelectField(u'Location', coerce=int)
+    submit = SubmitField("Submit appointment")
+
+class AddWorkingTimeForm(FlaskForm):
+    doctor = SelectField(u'Doctor', coerce=int)
+    startdate = DateField("Start Date", validators=[DataRequired()])
+    enddate = DateField("End Date", validators=[DataRequired()])
+    starttime = StringField('Start Time', validators=[DataRequired()])
+    endtime = StringField('End Time', validators=[DataRequired()])
+    submit = SubmitField("Submit working time")
+
+    def validate_date(self, enddate, startdate):                                                         
+        if enddate.data < startdate.data:                                          
+            raise ValidationError('Please check the dates again')
+
+class AddLocationForm(FlaskForm):
+    name = StringField('name', validators=[DataRequired()])
+    adress = StringField('Adress', validators=[DataRequired()])
+    room = StringField('Room / Floor / Buildingnumber', validators=[DataRequired()])
+    colortape = StringField('Colortape', validators=[DataRequired()])
+    link = StringField('Link', validators=[DataRequired()])
+    submit = SubmitField("Submit")
+
+class BookPatientForm(FlaskForm):
+    city = SelectField(u'City')
+    department = SelectField(u'Department')
+    hospital = SelectField(u'Hospital')
+    apdate = DateField("Date")
+    doctor = SelectField(u'Doctor', coerce=int)
+    aptime = SelectField('Time', validators=[DataRequired()])
     submit = SubmitField("Submit appointment")

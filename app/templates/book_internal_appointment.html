@@ -27,13 +27,11 @@
             });
 
             function getTimeSlots() {
-                alert('test')
                 $.getJSON('/_update_timeslots', { doc: $('#doctor').val(), date: $('#apdate').val() }, function(response) {
 
                     console.log(response);
 
                     $('#aptime').empty();
-                    alert('hurray');
                     for (var i = 0; i < response.length; i++) {
                         $('#aptime').append(
                             $('<option></option>')
@@ -59,9 +57,12 @@
     <form action="{{ url_for('book_internal_appointment') }}" method="post">
         {{ form.hidden_tag() }}
         <p>{{ wtf.form_field(form.phone)  }}</p>
+        <p>{{  wtf.form_field(form.firstname) }}</p>
+        <p>{{  wtf.form_field(form.lastname) }}</p>
         <p>{{  wtf.form_field(form.doctor) }}</p>
         <p>{{ wtf.form_field(form.apdate)  }}</p>
         <p>{{ wtf.form_field(form.aptime)  }}</p>
+        <p>{{ wtf.form_field(form.location)  }}</p>
         <p>{{  wtf.form_field(form.submit)  }}</p>
         {% if form.errors %}
         {{ form.errors }}

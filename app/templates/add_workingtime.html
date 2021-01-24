@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+
+{% block scripts %}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.6.3/css/bootstrap-select.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        $("#startdate").flatpickr({
+            enableTime: false,
+            inline: true
+        });
+        $("#enddate").flatpickr({
+            enableTime: false,
+            inline: true
+        });
+    </script>
+{% endblock  %} 
+
+{% block app_content %}
+    <h1>Add hospital</h1>
+    <div class="row">
+        <div class="col-md-4">
+            <form action="{{ url_for('add_workingtime') }}" method="post">
+                {{ form.hidden_tag() }}
+                <p>{{ wtf.form_field(form.doctor)  }}</p>
+                <p>{{  wtf.form_field(form.startdate) }}</p>
+                <p>{{  wtf.form_field(form.enddate) }}</p>
+                <p>{{  wtf.form_field(form.starttime) }}</p>
+                <p>{{ wtf.form_field(form.endtime)  }}</p>
+                <p>{{  wtf.form_field(form.submit)  }}</p>
+                {% if form.errors %}
+                {{ form.errors }}
+                {% endif %}
+            </form>        
+        </div>
+    </div>
+{% endblock %}

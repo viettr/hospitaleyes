@@ -323,6 +323,8 @@ def book_appointment_patient():
             to=patient.phone,
             from_='HSPTLEYES',
             body=text_body)
+        return redirect(url_for('myappointments'))
+
     return render_template('book_appointment_patient.html', form=form)   
 
 @app.route('/_update_hospital', methods=['GET', 'POST'])

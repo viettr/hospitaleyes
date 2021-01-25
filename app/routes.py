@@ -9,11 +9,15 @@ import pandas as pd
 import os
 from twilio.rest import Client
 
-account_sid = os.environ['TWILIO_ACCOUNT_SID']
-auth_token = os.environ['TWILIO_AUTH_TOKEN']
-client = Client(account_sid, auth_token)
+try:
+    account_sid = os.environ['TWILIO_ACCOUNT_SID']
+    auth_token = os.environ['TWILIO_AUTH_TOKEN']
+    client = Client(account_sid, auth_token)
+    send_message = True
+except:
+    send_message = False
 
-send_message = True
+
 
 @app.route('/')
 def home():
@@ -295,13 +299,16 @@ def book_appointment_patient():
     index=pd.date_range('2016-09-02T00:00:00Z', '2016-09-02T23:55:00Z',
     freq='15T')).between_time("00:00","23:55").index.strftime('%H:%M').tolist())
     form.aptime.choices = times
+
     if form.validate_on_submit():
-        patient = Patient.query.filter_by(phone=current_user.patient_id).first()
-        doc_match = db.session.query(TimeSlots).outerjoin(DoctorDate).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, TimeSlots.slot == form.apdate.data).with_entities(DoctorDate.doctor_id).all()
-        Aptimes = db.session.query(Appointment).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, Appointment.aptime == form.aptime.data).with_entities(Appointment.doctor_id).all()            
+        patient = Patient.query.filter_by(id=int(current_user.patient_id)).first()
+        doc_match = DoctorDate.query.outerjoin(TimeSlots).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, TimeSlots.slot == form.aptime.data).all()
+        doc_match = [d.doctor_id for d in doc_match]
+        Aptimes = Appointment.query.outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, Appointment.aptime == form.aptime.data).all()            
         if not Aptimes is None:
-            doc_match = [x for x in doc_match if x not in Aptimes]        
-        doc_match = [t[0] for t in doc_match]
+            Aptimes = [d.doctor_id for d in Aptimes]
+            doc_match = [x for x in doc_match if x not in Aptimes]
+        doc_match = doc_match[0] 
         doc = Doctors.query.filter_by(id=doc_match).first()
         appoint = Appointment(apdate=str(form.apdate.data), aptime=str(form.aptime.data), patient=patient, doctor=doc)
         db.session.add(appoint)
@@ -316,8 +323,6 @@ def book_appointment_patient():
             to=patient.phone,
             from_='HSPTLEYES',
             body=text_body)
-
-        flash('Your appointment has been made!')
     return render_template('book_appointment_patient.html', form=form)   
 
 @app.route('/_update_hospital', methods=['GET', 'POST'])

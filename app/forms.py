@@ -124,6 +124,6 @@ class BookPatientForm(FlaskForm):
     city = SelectField(u'City')
     department = SelectField(u'Department')
     hospital = SelectField(u'Hospital', coerce=int)
-    apdate = DateField("Date")
+    apdate = StringField("Date")
     aptime = SelectField('Time', validators=[DataRequired()])
     submit = SubmitField("Submit appointment")

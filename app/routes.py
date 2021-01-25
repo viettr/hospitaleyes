@@ -324,7 +324,7 @@ def book_appointment_patient():
 def update_hospital():
     city = request.args.get('city')
     department = request.args.get('department')
-    hospitals = db.session.query(Hospital, db.func.count(TimeSlots.id)).outerjoin(Department).outerjoin(Doctors).outerjoin(DoctorDate).outerjoin(TimeSlots).filter(Hospital.city ==  city, Department.name == department).group_by(Hospital.name).all()
+    hospitals = db.session.query(Hospital, db.func.count(TimeSlots.id)).outerjoin(Department).outerjoin(Doctors).outerjoin(DoctorDate).outerjoin(TimeSlots).filter(Hospital.city ==  city, Department.name == department).group_by(Hospital.name, Hospital.id).all()
     if hospitals is None:
         hospitals = []
     else:

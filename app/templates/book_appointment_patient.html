@@ -9,10 +9,16 @@
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.6.3/css/bootstrap-select.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+        $("#apdate").flatpickr({
+          enableTime: false,
+          inline: true
+          });
         $(function() {
             var city = $('#city');
             var sel_dep = $('#department');
+            var sel_date = $('#apdate');
             var sel_hospital = $('#hospital');
+
 
             city.on('click', function() {
                 getHospitalSlots();
@@ -21,6 +27,31 @@
             sel_dep.on('click', function() {
                 getHospitalSlots();
             });
+            sel_hospital.on('click', function() {
+                getHospitalSlots();
+            });
+            sel_date.on('change', function() {
+              getTimeSlots();
+            });
+            sel_hospital.on('change', function() {
+              getTimeSlots();
+            });
+
+            function getTimeSlots() {
+              $.getJSON('/_update_timeslots_patient', { department: $('#department').val(), hospital: $('#hospital').val(), date: $('#apdate').val() }, function(response) {
+
+                console.log(response);
+
+                $('#aptime').empty();
+                    for (var i = 0; i < response.length; i++) {
+                        $('#aptime').append(
+                            $('<option></option>')
+                            .text(response[i])
+                        );
+                    }
+            });
+            };
+
 
             function getHospitalSlots() {
                 $.getJSON('/_update_hospital', { city: $('#city').val(), department: $('#department').val() }, function(response) {
@@ -50,6 +81,8 @@
         <p>{{ wtf.form_field(form.city)  }}</p>
         <p>{{  wtf.form_field(form.department) }}</p>
         <p>{{  wtf.form_field(form.hospital) }}</p>
+        <p>{{  wtf.form_field(form.apdate) }}</p>
+        <p>{{  wtf.form_field(form.aptime) }}</p>
         <p>{{  wtf.form_field(form.submit)  }}</p>
         {% if form.errors %}
         {{ form.errors }}

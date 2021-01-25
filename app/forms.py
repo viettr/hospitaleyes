@@ -92,9 +92,9 @@ class CancelForm(FlaskForm):
 
 class BookInternalForm(FlaskForm):
     phone = StringField('Phone', validators=[DataRequired()])
-    firstname = StringField('Firstname', validators=[DataRequired()])
-    lastname = StringField('Lastname', validators=[DataRequired()])
-    apdate = DateField("date")
+    firstname = StringField('First name', validators=[DataRequired()])
+    lastname = StringField('Last name', validators=[DataRequired()])
+    apdate = DateField("Date")
     aptime = SelectField('Time', validators=[DataRequired()])
     doctor = SelectField(u'Doctor', coerce=int)
     location = SelectField(u'Location', coerce=int)
@@ -123,8 +123,7 @@ class AddLocationForm(FlaskForm):
 class BookPatientForm(FlaskForm):
     city = SelectField(u'City')
     department = SelectField(u'Department')
-    hospital = SelectField(u'Hospital')
+    hospital = SelectField(u'Hospital', coerce=int)
     apdate = DateField("Date")
-    doctor = SelectField(u'Doctor', coerce=int)
     aptime = SelectField('Time', validators=[DataRequired()])
     submit = SubmitField("Submit appointment")

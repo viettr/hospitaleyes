@@ -288,8 +288,36 @@ def book_appointment_patient():
     department_choices = Department.query.with_entities(Department.name).distinct().all()
     department_choices = [d[0] for d in department_choices]
     form.department.choices = department_choices
+    hospital_choices = Hospital.query.with_entities(Hospital.id).distinct().all()
+    hospital_choices = [h[0] for h in hospital_choices]
+    form.hospital.choices = hospital_choices
+    times = (pd.DataFrame(columns=['NULL'],
+    index=pd.date_range('2016-09-02T00:00:00Z', '2016-09-02T23:55:00Z',
+    freq='15T')).between_time("00:00","23:55").index.strftime('%H:%M').tolist())
+    form.aptime.choices = times
     if form.validate_on_submit():
-        flash('The location has been added!')
+        patient = Patient.query.filter_by(phone=current_user.patient_id).first()
+        doc_match = db.session.query(TimeSlots).outerjoin(DoctorDate).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, TimeSlots.slot == form.apdate.data).with_entities(DoctorDate.doctor_id).all()
+        Aptimes = db.session.query(Appointment).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, Appointment.aptime == form.aptime.data).with_entities(Appointment.doctor_id).all()            
+        if not Aptimes is None:
+            doc_match = [x for x in doc_match if x not in Aptimes]        
+        doc_match = [t[0] for t in doc_match]
+        doc = Doctors.query.filter_by(id=doc_match).first()
+        appoint = Appointment(apdate=str(form.apdate.data), aptime=str(form.aptime.data), patient=patient, doctor=doc)
+        db.session.add(appoint)
+        db.session.commit()
+        if send_message:
+            location=Location.query.filter_by(id = doc.department_id).first()
+            text_start = "Thank you for your appointment with " + doc.name + " at " + str(form.apdate.data) + " " + form.aptime.data + ". "
+            text_adress = " Come to " + location.adress + " to the room " + location.room + " by following the color " + location.colortape + ". You can find the map " + location.link + ". " 
+            text_process = "Bring your isurance card."
+            text_body = text_start + text_adress + text_process
+            message = client.messages.create(
+            to=patient.phone,
+            from_='HSPTLEYES',
+            body=text_body)
+
+        flash('Your appointment has been made!')
     return render_template('book_appointment_patient.html', form=form)   
 
 @app.route('/_update_hospital', methods=['GET', 'POST'])
@@ -303,5 +331,24 @@ def update_hospital():
         hospitals = [(t[0].id, t[0].name + " Available Slots: " + str(t[1])) for t in hospitals]
 
     response = make_response(json.dumps(hospitals))
+    response.content_type = 'application/json'
+    return response
+
+@app.route('/_update_timeslots_patient', methods=['GET', 'POST'])
+def update_timeslots_patient():
+    department = request.args.get('department')
+    hospital = request.args.get('hospital')
+    date = request.args.get('date')
+    timeslots = db.session.query(TimeSlots).outerjoin(DoctorDate).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  hospital, Department.name == department, DoctorDate.date == date).with_entities(TimeSlots.slot, DoctorDate.doctor_id).all()
+    if timeslots is None:
+        timeslots = []
+    else:
+        Aptimes = db.session.query(Appointment).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  hospital, Department.name == department, DoctorDate.date == date).with_entities(Appointment.aptime, Appointment.doctor_id).all()            
+        if not Aptimes is None:
+            timeslots = [x for x in timeslots if x not in Aptimes]
+        timeslots = [t[0] for t in timeslots]
+        timeslots = list(set(timeslots))
+        timeslots.sort()
+    response = make_response(json.dumps(timeslots))
     response.content_type = 'application/json'
     return response

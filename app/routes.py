@@ -4,7 +4,7 @@ from werkzeug.urls import url_parse
 from app import app, db
 from app.forms import LoginForm, RegistrationForm, DateForm, CancelForm, BookForm, AddDoctorForm, AddHospitalForm, RegistrationDepartmentForm, BookInternalForm, AddWorkingTimeForm, AddLocationForm, BookPatientForm
 from app.models import User, Appointment, Doctors, Patient, Hospital, Department, DoctorDate, TimeSlots, Location
-from datetime import datetime
+from datetime import datetime, date, timedelta
 import pandas as pd
 import os
 from twilio.rest import Client
@@ -185,7 +185,9 @@ def book_internal_appointment():
                 appoint = Appointment(apdate=str(form.apdate.data), aptime=str(form.aptime.data), patient=patient, doctor=doc)
                 db.session.add(appoint)
                 db.session.commit()
-
+                update_timeslot_status = TimeSlots.query.outerjoin(DoctorDate).outerjoin(Doctors).filter(Doctors.id == doc.id, DoctorDate.date == str(form.apdate.data), TimeSlots.slot == form.aptime.data).first()
+                update_timeslot_status.free = "False"
+                db.session.commit()
 
                 if send_message:
                     location=Location.query.filter_by(id = form.location.data).first()
@@ -264,7 +266,7 @@ def add_workingtime():
             db.session.commit()
             date = DoctorDate.query.filter_by(date=i, doctor_id=doctor.id).first()
             for j in times:
-                time = TimeSlots(slot = j, date = date)
+                time = TimeSlots(slot = j, date = date, free = 'True')
                 db.session.add(time)
                 db.session.commit()
 
@@ -313,6 +315,10 @@ def book_appointment_patient():
         appoint = Appointment(apdate=str(form.apdate.data), aptime=str(form.aptime.data), patient=patient, doctor=doc)
         db.session.add(appoint)
         db.session.commit()
+        update_timeslot_status = TimeSlots.query.outerjoin(DoctorDate).outerjoin(Doctors).filter(Doctors.id == doc.id, DoctorDate.date == str(form.apdate.data), TimeSlots.slot == form.aptime.data).first()
+        update_timeslot_status.free = "False"
+        db.session.commit()
+
         if send_message:
             location=Location.query.filter_by(id = doc.department_id).first()
             text_start = "Thank you for your appointment with " + doc.name + " at " + str(form.apdate.data) + " " + form.aptime.data + ". "
@@ -331,7 +337,10 @@ def book_appointment_patient():
 def update_hospital():
     city = request.args.get('city')
     department = request.args.get('department')
-    hospitals = db.session.query(Hospital, db.func.count(TimeSlots.id)).outerjoin(Department).outerjoin(Doctors).outerjoin(DoctorDate).outerjoin(TimeSlots).filter(Hospital.city ==  city, Department.name == department).group_by(Hospital.name, Hospital.id).all()
+    today = date.today().strftime("%Y-%m-%d")
+    future_30_days = datetime.now() + timedelta(days=30)
+    future_30_days = future_30_days.strftime("%Y-%m-%d")
+    hospitals = db.session.query(Hospital, db.func.count(TimeSlots.id)).outerjoin(Department).outerjoin(Doctors).outerjoin(DoctorDate).outerjoin(TimeSlots).filter(Hospital.city ==  city, Department.name == department, TimeSlots.free == "True").filter(DoctorDate.date >= today).filter(DoctorDate.date <= future_30_days).group_by(Hospital.name, Hospital.id).all()
     if hospitals is None:
         hospitals = []
     else:

@@ -75,7 +75,7 @@ class AddHospitalForm(FlaskForm):
 
 class AddDoctorForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
-    submit = SubmitField('Register')
+    submit = SubmitField('Add')
 
     
 class DateForm(FlaskForm):
@@ -113,9 +113,9 @@ class AddWorkingTimeForm(FlaskForm):
             raise ValidationError('Please check the dates again')
 
 class AddLocationForm(FlaskForm):
-    name = StringField('name', validators=[DataRequired()])
+    name = StringField('Name', validators=[DataRequired()])
     adress = StringField('Adress', validators=[DataRequired()])
-    room = StringField('Room / Floor / Buildingnumber', validators=[DataRequired()])
+    room = StringField('Room / Floor / Building number', validators=[DataRequired()])
     colortape = StringField('Colortape', validators=[DataRequired()])
     link = StringField('Link', validators=[DataRequired()])
     submit = SubmitField("Submit")

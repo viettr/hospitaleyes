@@ -4,15 +4,20 @@
 {% if current_user.role == 'patient' %}
 <h1>Hi, {{ current_user.username }}!</h1>
 
-<h2>YOUR UPCOMING APPOINTMENT</h2>
 {% elif current_user.role == 'hospital' %}
 <h1>Hi, {{ current_user.username }}!</h1>
 
-<li><a href="{{ url_for('add_doctor') }}">Add Doctor</a></li>
+<li><a href="{{ url_for('add_doctor') }}">Add doctor</a></li>
 <li><a href="{{ url_for('book_internal_appointment') }}">Add appointment</a></li>
-<li><a href="{{ url_for('add_workingtime') }}">Add Workingtime</a></li>
+<li><a href="{{ url_for('add_workingtime') }}">Add working time</a></li>
 <li><a href="{{ url_for('add_location') }}">Add Location</a></li>
 
+<div class="row">
+    <div class="col-md-6">
+        <div class="chart" id="graph">
+        </div>
+    </div>
+</div>
 
 {% endif %}
 

@@ -11,7 +11,8 @@
     <script>
         $("#startdate").flatpickr({
             enableTime: false,
-            inline: true
+            inline: true, 
+            minDate: "today"
         });
         $("#enddate").flatpickr({
             enableTime: false,
@@ -21,7 +22,7 @@
 {% endblock  %} 
 
 {% block app_content %}
-    <h1>Add hospital</h1>
+    <h1>Add working time</h1>
     <div class="row">
         <div class="col-md-4">
             <form action="{{ url_for('add_workingtime') }}" method="post">

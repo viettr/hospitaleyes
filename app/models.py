@@ -81,6 +81,7 @@ class TimeSlots(db.Model):
     __tablename__ = 'TimeSlots'
     id = db.Column(db.Integer, primary_key = True)
     slot = db.Column(db.String(80))
+    free = db.Column(db.String(80))
     doctor_date_id = db.Column(db.Integer, db.ForeignKey('DoctorDate.id'))
 
 

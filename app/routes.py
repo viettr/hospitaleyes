@@ -64,6 +64,8 @@ def register():
         return redirect(url_for('index'))
     return render_template('register.html', title='Register')
 
+
+# Patient view 
 @app.route('/register_patient', methods=['GET', 'POST'])
 def register_patient():
     if current_user.is_authenticated:
@@ -83,6 +85,105 @@ def register_patient():
         flash('Congratulations, you are now a registered patient!')
         return redirect(url_for('login'))
     return render_template('register_patient.html', title='Register', form=form)
+
+@app.route('/myappointments', methods=['GET', 'POST'])
+@login_required
+def myappointments():
+    appointments = db.session.query(Appointment).outerjoin(Doctors).outerjoin(Department).filter(Appointment.patient_id ==  current_user.patient_id).all()
+    table_header = ["#", "Date", "Time", "Doctor"]
+    appoint = []
+    for appoin in appointments:
+        appoint.append([appoin.id, appoin.apdate, appoin.aptime, appoin.doctor.name])
+
+    return render_template('myappointments.html', title='Appointment', table_header=table_header, appointments= appoint)
+
+
+@app.route('/book_appointment_patient', methods=['GET', 'POST'])
+@login_required
+def book_appointment_patient():
+    form = BookPatientForm()
+    city_choices = Hospital.query.with_entities(Hospital.city).distinct().all()
+    city_choices = [h[0] for h in city_choices]
+    form.city.choices = city_choices
+    department_choices = Department.query.with_entities(Department.name).distinct().all()
+    department_choices = [d[0] for d in department_choices]
+    form.department.choices = department_choices
+    hospital_choices = Hospital.query.with_entities(Hospital.id).distinct().all()
+    hospital_choices = [h[0] for h in hospital_choices]
+    form.hospital.choices = hospital_choices
+    times = (pd.DataFrame(columns=['NULL'],
+    index=pd.date_range('2016-09-02T00:00:00Z', '2016-09-02T23:55:00Z',
+    freq='15T')).between_time("00:00","23:55").index.strftime('%H:%M').tolist())
+    form.aptime.choices = times
+
+    if form.validate_on_submit():
+        patient = Patient.query.filter_by(id=int(current_user.patient_id)).first()
+        doc_match = DoctorDate.query.outerjoin(TimeSlots).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, TimeSlots.slot == form.aptime.data).all()
+        doc_match = [d.doctor_id for d in doc_match]
+        Aptimes = Appointment.query.outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, Appointment.aptime == form.aptime.data).all()            
+        if not Aptimes is None:
+            Aptimes = [d.doctor_id for d in Aptimes]
+            doc_match = [x for x in doc_match if x not in Aptimes]
+        doc_match = doc_match[0] 
+        doc = Doctors.query.filter_by(id=doc_match).first()
+        appoint = Appointment(apdate=str(form.apdate.data), aptime=str(form.aptime.data), patient=patient, doctor=doc)
+        db.session.add(appoint)
+        db.session.commit()
+        update_timeslot_status = TimeSlots.query.outerjoin(DoctorDate).outerjoin(Doctors).filter(Doctors.id == doc.id, DoctorDate.date == str(form.apdate.data), TimeSlots.slot == form.aptime.data).first()
+        update_timeslot_status.free = "False"
+        db.session.commit()
+
+        if send_message:
+            location=Location.query.filter_by(id = doc.department_id).first()
+            text_start = "Thank you for your appointment with " + doc.name + " at " + str(form.apdate.data) + " " + form.aptime.data + ". "
+            text_adress = " Come to " + location.adress + " to the room " + location.room + " by following the color " + location.colortape + ". You can find the map " + location.link + ". " 
+            text_process = "Bring your isurance card."
+            text_body = text_start + text_adress + text_process
+            message = client.messages.create(
+            to=patient.phone,
+            from_='HSPTLEYES',
+            body=text_body)
+        return redirect(url_for('myappointments'))
+
+    return render_template('book_appointment_patient.html', form=form)   
+
+@app.route('/_update_hospital', methods=['GET', 'POST'])
+def update_hospital():
+    city = request.args.get('city')
+    department = request.args.get('department')
+    today = date.today().strftime("%Y-%m-%d")
+    future_30_days = datetime.now() + timedelta(days=30)
+    future_30_days = future_30_days.strftime("%Y-%m-%d")
+    hospitals = db.session.query(Hospital, db.func.count(TimeSlots.id)).outerjoin(Department).outerjoin(Doctors).outerjoin(DoctorDate).outerjoin(TimeSlots).filter(Hospital.city ==  city, Department.name == department, TimeSlots.free == "True").filter(DoctorDate.date >= today).filter(DoctorDate.date <= future_30_days).group_by(Hospital.name, Hospital.id).all()
+    if hospitals is None:
+        hospitals = []
+    else:
+        hospitals = [(t[0].id, t[0].name + " Available Slots: " + str(t[1])) for t in hospitals]
+
+    response = make_response(json.dumps(hospitals))
+    response.content_type = 'application/json'
+    return response
+
+@app.route('/_update_timeslots_patient', methods=['GET', 'POST'])
+def update_timeslots_patient():
+    department = request.args.get('department')
+    hospital = request.args.get('hospital')
+    date = request.args.get('date')
+    timeslots = db.session.query(TimeSlots).outerjoin(DoctorDate).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  hospital, Department.name == department, DoctorDate.date == date).with_entities(TimeSlots.slot, DoctorDate.doctor_id).all()
+    if timeslots is None:
+        timeslots = []
+    else:
+        Aptimes = db.session.query(Appointment).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  hospital, Department.name == department, DoctorDate.date == date).with_entities(Appointment.aptime, Appointment.doctor_id).all()            
+        if not Aptimes is None:
+            timeslots = [x for x in timeslots if x not in Aptimes]
+        timeslots = [t[0] for t in timeslots]
+        timeslots = list(set(timeslots))
+        timeslots.sort()
+    response = make_response(json.dumps(timeslots))
+    response.content_type = 'application/json'
+    return response
+
+# Hospital view
 
 
 @app.route('/register_department', methods=['GET', 'POST'])
@@ -233,16 +334,6 @@ def update_timeslots():
     response.content_type = 'application/json'
     return response
 
-@app.route('/myappointments', methods=['GET', 'POST'])
-@login_required
-def myappointments():
-    appointments = db.session.query(Appointment).outerjoin(Doctors).outerjoin(Department).filter(Appointment.patient_id ==  current_user.patient_id).all()
-    table_header = ["#", "Date", "Time", "Doctor"]
-    appoint = []
-    for appoin in appointments:
-        appoint.append([appoin.id, appoin.apdate, appoin.aptime, appoin.doctor.name])
-
-    return render_template('myappointments.html', title='Appointment', table_header=table_header, appointments= appoint)
 
 @app.route('/add_workingtime', methods=['GET', 'POST'])
 @login_required
@@ -283,88 +374,3 @@ def add_location():
         db.session.commit()
         flash('The location has been added!')
     return render_template('add_location.html', form=form)   
-
-@app.route('/book_appointment_patient', methods=['GET', 'POST'])
-@login_required
-def book_appointment_patient():
-    form = BookPatientForm()
-    city_choices = Hospital.query.with_entities(Hospital.city).distinct().all()
-    city_choices = [h[0] for h in city_choices]
-    form.city.choices = city_choices
-    department_choices = Department.query.with_entities(Department.name).distinct().all()
-    department_choices = [d[0] for d in department_choices]
-    form.department.choices = department_choices
-    hospital_choices = Hospital.query.with_entities(Hospital.id).distinct().all()
-    hospital_choices = [h[0] for h in hospital_choices]
-    form.hospital.choices = hospital_choices
-    times = (pd.DataFrame(columns=['NULL'],
-    index=pd.date_range('2016-09-02T00:00:00Z', '2016-09-02T23:55:00Z',
-    freq='15T')).between_time("00:00","23:55").index.strftime('%H:%M').tolist())
-    form.aptime.choices = times
-
-    if form.validate_on_submit():
-        patient = Patient.query.filter_by(id=int(current_user.patient_id)).first()
-        doc_match = DoctorDate.query.outerjoin(TimeSlots).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, TimeSlots.slot == form.aptime.data).all()
-        doc_match = [d.doctor_id for d in doc_match]
-        Aptimes = Appointment.query.outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  form.hospital.data, Department.name == form.department.data, DoctorDate.date == form.apdate.data, Appointment.aptime == form.aptime.data).all()            
-        if not Aptimes is None:
-            Aptimes = [d.doctor_id for d in Aptimes]
-            doc_match = [x for x in doc_match if x not in Aptimes]
-        doc_match = doc_match[0] 
-        doc = Doctors.query.filter_by(id=doc_match).first()
-        appoint = Appointment(apdate=str(form.apdate.data), aptime=str(form.aptime.data), patient=patient, doctor=doc)
-        db.session.add(appoint)
-        db.session.commit()
-        update_timeslot_status = TimeSlots.query.outerjoin(DoctorDate).outerjoin(Doctors).filter(Doctors.id == doc.id, DoctorDate.date == str(form.apdate.data), TimeSlots.slot == form.aptime.data).first()
-        update_timeslot_status.free = "False"
-        db.session.commit()
-
-        if send_message:
-            location=Location.query.filter_by(id = doc.department_id).first()
-            text_start = "Thank you for your appointment with " + doc.name + " at " + str(form.apdate.data) + " " + form.aptime.data + ". "
-            text_adress = " Come to " + location.adress + " to the room " + location.room + " by following the color " + location.colortape + ". You can find the map " + location.link + ". " 
-            text_process = "Bring your isurance card."
-            text_body = text_start + text_adress + text_process
-            message = client.messages.create(
-            to=patient.phone,
-            from_='HSPTLEYES',
-            body=text_body)
-        return redirect(url_for('myappointments'))
-
-    return render_template('book_appointment_patient.html', form=form)   
-
-@app.route('/_update_hospital', methods=['GET', 'POST'])
-def update_hospital():
-    city = request.args.get('city')
-    department = request.args.get('department')
-    today = date.today().strftime("%Y-%m-%d")
-    future_30_days = datetime.now() + timedelta(days=30)
-    future_30_days = future_30_days.strftime("%Y-%m-%d")
-    hospitals = db.session.query(Hospital, db.func.count(TimeSlots.id)).outerjoin(Department).outerjoin(Doctors).outerjoin(DoctorDate).outerjoin(TimeSlots).filter(Hospital.city ==  city, Department.name == department, TimeSlots.free == "True").filter(DoctorDate.date >= today).filter(DoctorDate.date <= future_30_days).group_by(Hospital.name, Hospital.id).all()
-    if hospitals is None:
-        hospitals = []
-    else:
-        hospitals = [(t[0].id, t[0].name + " Available Slots: " + str(t[1])) for t in hospitals]
-
-    response = make_response(json.dumps(hospitals))
-    response.content_type = 'application/json'
-    return response
-
-@app.route('/_update_timeslots_patient', methods=['GET', 'POST'])
-def update_timeslots_patient():
-    department = request.args.get('department')
-    hospital = request.args.get('hospital')
-    date = request.args.get('date')
-    timeslots = db.session.query(TimeSlots).outerjoin(DoctorDate).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  hospital, Department.name == department, DoctorDate.date == date).with_entities(TimeSlots.slot, DoctorDate.doctor_id).all()
-    if timeslots is None:
-        timeslots = []
-    else:
-        Aptimes = db.session.query(Appointment).outerjoin(Doctors).outerjoin(Department).outerjoin(Hospital).filter(Hospital.id ==  hospital, Department.name == department, DoctorDate.date == date).with_entities(Appointment.aptime, Appointment.doctor_id).all()            
-        if not Aptimes is None:
-            timeslots = [x for x in timeslots if x not in Aptimes]
-        timeslots = [t[0] for t in timeslots]
-        timeslots = list(set(timeslots))
-        timeslots.sort()
-    response = make_response(json.dumps(timeslots))
-    response.content_type = 'application/json'
-    return response
